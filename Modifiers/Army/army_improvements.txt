@@ -1,0 +1,5 @@
+Army_Commander  = {
+        icon = prowess_positive
+        men_at_arms_cap = 20
+        men_at_arms_limit = 10
+}
