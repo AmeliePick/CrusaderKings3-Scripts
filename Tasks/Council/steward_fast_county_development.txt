@@ -1,0 +1,355 @@
+task_develop_county = {
+	position = councillor_steward
+
+	task_type = task_type_county
+	county_target = realm
+	ai_county_target = domain
+	task_progress = task_progress_value
+	task_current_value = scope:councillor_liege.steward_develop_county_current_progress
+	task_max_value = 100 # decrease it to lower the max progress value.
+	highlight_own_realm = yes
+
+
+	# Possible additional effects
+	effect_desc = {
+		desc = task_develop_county_complete_effect_desc # Hard setted probably.
+		desc = task_develop_county_effect_desc
+		desc = {
+			desc = council_task_possible_side_effects
+			triggered_desc = {
+				trigger = {
+					stewardship > mediocre_skill_rating
+					trigger_if = {
+						limit = {
+							exists = scope:county
+						}
+						scope:county = {
+							NOT = { has_county_modifier = steward_task_efficient_taxation_modifier }
+						}
+					}
+				}
+				desc = task_develop_county_efficient_taxation
+			}
+			triggered_desc = {
+				trigger = {
+					stewardship > mediocre_skill_rating
+					trigger_if = {
+						limit = { exists = scope:county }
+						scope:county = {
+							county_control < full_county_control
+						}
+					}
+				}
+				desc = task_develop_county_increased_control
+			}
+			triggered_desc = {
+				trigger = {
+					stewardship < high_skill_rating
+					trigger_if = {
+						limit = { exists = scope:county }
+						scope:county = {
+							NOT = { has_county_modifier = steward_settler_resistance_modifier }
+						}
+					}
+				}
+				desc = task_develop_county_increased_control
+			}
+			triggered_desc = {
+				trigger = {
+					stewardship < high_skill_rating
+					trigger_if = {
+						limit = { exists = scope:county }
+						scope:county = {
+							NOT = { has_county_modifier = steward_construction_slowdown_modifier }
+						}
+					}
+				}
+				desc = task_develop_county_slow_construction
+			}
+			triggered_desc = {
+				trigger = {
+					stewardship < high_skill_rating
+					trigger_if = {
+						limit = { exists = scope:county }
+						scope:county = {
+							NOT = { has_county_modifier = steward_population_mismanaged_modifier }
+						}
+					}
+				}
+				desc = task_develop_county_loss_of_opinion
+			}
+			triggered_desc = {
+				trigger = {
+					stewardship < high_skill_rating
+					trigger_if = {
+						limit = { exists = scope:county }
+						scope:county = {
+							county_control > low_county_control
+						}
+					}
+				}
+				desc = task_develop_county_loss_of_control
+			}
+		}
+	}
+
+	# TOTAL PROGRESS MUST MATCH THE TOTAL OF THE COUNTY MODIFIERS BELOW
+		# Add all new progress values to the script value steward_develop_county_total
+		# Note that for Develop County, the County Modifiers apply the actual values, while progress is for player info only
+	progress = {
+		value = 0
+		add = {
+			value = scope:county.development_towards_level_increase
+			desc = STEWARD_PROGRESS_BASE
+		}
+		add = {
+			value = scope:councillor.steward_develop_county_monthly_increase
+			desc = SCALED_COUNCILLOR_STEWARDSHIP_VALUE
+		}
+		if = {
+			limit = {
+				scope:councillor_liege = { has_perk = planned_cultivation_perk }
+			}
+			add = {
+				value = scope:councillor.steward_develop_county_perk_bonus_monthly_increase
+				desc = DEVELOP_COUNTY_PERK_BONUS_VALUE
+			}
+		}
+		if = {
+			limit = {
+				exists = scope:councillor_liege.dynasty
+				scope:councillor_liege.dynasty = { has_dynasty_perk = erudition_legacy_5 }
+			}
+			add = {
+				value = scope:councillor.steward_develop_county_erudition_bonus_monthly_increase
+				desc = ERUDITION_DYNASTY_PERK_BONUS_VALUE
+			}
+		}
+
+		# Relation Bonuses/Penalties
+		if = { # Friend
+			limit = {
+				scope:councillor_liege = {
+					has_relation_friend = scope:councillor
+					NOT = { has_relation_best_friend = scope:councillor }
+				}
+			}
+			add = {
+				value = scope:councillor.steward_develop_county_monthly_increase_friend_bonus
+				desc = COUNCILLOR_IS_YOUR_FRIEND
+			}
+		}
+		if = { # Best Friend
+			limit = {
+				scope:councillor_liege = {
+					has_relation_best_friend = scope:councillor
+				}
+			}
+			add = {
+				value = scope:councillor.steward_develop_county_monthly_increase_best_friend_bonus
+				desc = COUNCILLOR_IS_YOUR_BEST_FRIEND
+			}
+		}
+		if = { # Rival
+			limit = {
+				scope:councillor_liege = {
+					has_relation_rival = scope:councillor
+					NOT = { has_relation_nemesis = scope:councillor }
+				}
+			}
+			add = {
+				value = scope:councillor.steward_develop_county_monthly_increase_rival_bonus
+				desc = COUNCILLOR_IS_YOUR_RIVAL
+			}
+		}
+		if = { # Nemesis
+			limit = {
+				scope:councillor_liege = {
+					has_relation_nemesis = scope:councillor
+				}
+			}
+			add = {
+				value = scope:councillor.steward_develop_county_monthly_increase_nemesis_bonus
+				desc = COUNCILLOR_IS_YOUR_NEMESIS
+			}
+		}
+		if = { #Tribal penalty
+			limit = {
+				scope:councillor_liege = {
+					should_apply_tribal_development_penalty_trigger = yes
+				}
+			}
+			add = {
+				value = scope:councillor.steward_develop_county_tribal_penalty
+				desc = DEVELOP_COUNTY_TRIBAL_PENALTY_VALUE
+			}
+		}
+		if = { # Development reduces the speed.
+			limit = {
+				exists = scope:county
+				scope:county = {
+					development_level > 0
+				}
+			}
+			add = {
+				value = scope:councillor.current_development_penalty
+				desc = STEWARD_CURRENT_DEVELOPMENT_PENALTY
+			}
+		}
+
+		if = {
+			limit = { exists = scope:county }
+			multiply = {
+				value = scope:county.development_rate_modifier
+				desc = STEWARD_COUNTY_SPEED_MODIFIERS
+			}
+		}
+	}
+	full_progress = 100 # Progress in each month(set it to 100 or more to finish task in a one month).
+	custom_other_loc = STEWARD_COUNTY_SPEED_OTHER
+
+	potential_county = {
+		scope:county = {
+			development_level < max_development_level
+			trigger_if = {
+				limit = {
+					scope:councillor_liege = { is_ai = yes }
+				}
+				OR = {
+					this = scope:councillor_liege.capital_county
+					title_province = {
+						OR = {
+							terrain = oasis
+							terrain = farmlands
+							terrain = floodplains
+						}
+					}
+				}
+			}
+		}
+	}
+
+	county_modifier = {
+		name = steward_develop_county_modifier
+		development_growth = 100
+
+		# All values which are percentages  in the game are multiplying by 100.
+		holding_build_speed = -0.07 # multiply the value by 100. -7 = -700%
+		build_speed = -0.07
+
+		#holding_build_gold_cost = -1
+		#build_gold_cost = -1
+
+		# IDK what does it mean, but it affects the values in current modifier.
+		# _council_tasks.info says that its a scaling factor. ??? OwO
+		#
+		# So, for development_growth the scale value is a multiplier.
+		# For example: if development_growth = 20 and scale value equal to 2
+		# then development_growth = 20 * 2.
+		#
+		# For the another values the scale value is probably a multiplier multiplied by 100.
+		# If holding_build_speed = 7 and scale value equal to 2
+		# then holding_build_speed = 7 * 2 * 100.
+		#scale = { value = 100 divide = 100 }
+	}
+
+	county_modifier = {
+		name = steward_develop_county_tribal_penalty_modifier
+		development_growth = 100
+		scale = {
+			value = 0
+			if = {
+				limit = {
+					scope:councillor_liege = {
+						should_apply_tribal_development_penalty_trigger = yes
+					}
+				}
+				value = scope:councillor.steward_develop_county_tribal_penalty
+				divide = 100
+			}
+		}
+	}
+
+	on_finish_task_county = {
+		if = {
+			limit = {
+				OR = {
+					AND = {
+						exists = scope:county
+						scope:county = {
+							development_level = max_development_level
+						}
+					}
+					scope:councillor_liege = {
+						is_ai = yes
+					}
+				}
+			}
+			start_default_task = yes
+		}
+		scope:councillor_liege = {
+			add_character_flag = {
+				flag = no_ai_increase_development
+				years = 10
+			}
+		}
+	}
+
+	on_start_task = {
+		liege = {
+			add_character_flag = {
+				flag = no_steward_side_effects_first_month
+				days = 30
+			}
+		}
+	}
+
+	on_monthly_county = {
+		scope:councillor_liege = {
+			if = {
+				limit = {
+					has_character_flag = no_steward_side_effects_first_month
+				}
+				remove_character_flag = no_steward_side_effects_first_month
+				add_character_flag = {
+					flag = ai_development_max_years
+					years = 1
+				}
+			}
+			else = {
+				trigger_event = {
+					on_action = task_develop_county_side_effects
+					days = { 1 30 }
+				}
+			}
+
+			if = {
+				limit = {
+					NOT = {
+						has_character_flag = ai_development_max_years
+					}
+				}
+				add_character_flag = {
+					flag = no_ai_increase_development
+					years = 10
+				}
+			}
+		}
+	}
+
+	ai_will_do = {
+		value = 100
+		if = {
+			# Don't do this too often
+			limit = {
+				scope:councillor_liege = { has_character_flag = no_ai_increase_development }
+			}
+		}
+		else_if = {
+			limit = {
+				scope:councillor_liege.gold >= steward_increase_development_value
+			}
+			add = 100
+		}
+	}
+}
