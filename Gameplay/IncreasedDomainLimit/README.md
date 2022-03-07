@@ -19,4 +19,7 @@
     <td>Crusader Kings III/game/localization/"yourPreferredLanguage"/</tr>
 </table>
 
-⚠️ Not compatible with other scripts changes/mods/etc ⚠️
+Find "has_too_many_held_duchies_trigger" block in *00_title_triggers.txt* and replace it with a new one.
+
+---
+⚠️ If another scripts changes/mods/etc uses the same files you need to merge all changes ⚠️

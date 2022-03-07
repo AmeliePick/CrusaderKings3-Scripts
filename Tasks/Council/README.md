@@ -33,3 +33,5 @@ Replace the code in the destination files.
     <td>steward_fast_county_development</td>
     <td>Crusader Kings III/game/common/council_tasks/00_steward_tasks.txt</tr>
 </table>
+
+Find "task_develop_county" block in *task_develop_county.txt* and replace it with a new one.

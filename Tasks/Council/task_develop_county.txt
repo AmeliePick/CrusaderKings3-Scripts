@@ -9,10 +9,8 @@ task_develop_county = {
 	task_max_value = 100 # decrease it to lower the max progress value.
 	highlight_own_realm = yes
 
-
-	# Possible additional effects
 	effect_desc = {
-		desc = task_develop_county_complete_effect_desc # Hard setted probably.
+		desc = task_develop_county_complete_effect_desc
 		desc = task_develop_county_effect_desc
 		desc = {
 			desc = council_task_possible_side_effects
@@ -99,7 +97,7 @@ task_develop_county = {
 	progress = {
 		value = 0
 		add = {
-			value = scope:county.development_towards_level_increase
+			value = steward_develop_county_base
 			desc = STEWARD_PROGRESS_BASE
 		}
 		add = {
@@ -117,12 +115,20 @@ task_develop_county = {
 		}
 		if = {
 			limit = {
-				exists = scope:councillor_liege.dynasty
-				scope:councillor_liege.dynasty = { has_dynasty_perk = erudition_legacy_5 }
+				councillor_liege_has_erudition_legacy_5_perk = yes
 			}
 			add = {
 				value = scope:councillor.steward_develop_county_erudition_bonus_monthly_increase
 				desc = ERUDITION_DYNASTY_PERK_BONUS_VALUE
+			}
+		}
+		if = {
+			limit = {
+				councillor_liege_has_family_business_bonus = yes
+			}
+			add = {
+				value = scope:councillor.steward_develop_county_family_business_monthly_increase
+				desc = FAMILY_BUSINESS_BONUS_VALUE
 			}
 		}
 
@@ -192,7 +198,7 @@ task_develop_county = {
 				}
 			}
 			add = {
-				value = scope:councillor.current_development_penalty
+				value = scope:county.current_development_penalty
 				desc = STEWARD_CURRENT_DEVELOPMENT_PENALTY
 			}
 		}
@@ -213,16 +219,31 @@ task_develop_county = {
 			development_level < max_development_level
 			trigger_if = {
 				limit = {
-					scope:councillor_liege = { is_ai = yes }
+					scope:councillor_liege = {
+						is_ai = yes
+						exists = capital_county
+					}
 				}
 				OR = {
 					this = scope:councillor_liege.capital_county
-					title_province = {
-						OR = {
-							terrain = oasis
-							terrain = farmlands
-							terrain = floodplains
+					AND = {
+						holder = scope:councillor_liege
+						title_province = {
+							OR = {
+								terrain = oasis
+								terrain = farmlands
+								terrain = floodplains
+							}
 						}
+					}
+				}
+				OR = {
+					culture = scope:councillor_liege.culture
+					culture = {
+						cultural_acceptance = { target = scope:councillor_liege.culture value >= 50 }
+					}
+					scope:councillor_liege = {
+						primary_title.tier < tier_duchy
 					}
 				}
 			}
@@ -288,50 +309,70 @@ task_develop_county = {
 			start_default_task = yes
 		}
 		scope:councillor_liege = {
+			if = { # Try to make relevant AI's focus on Acceptance
+				limit = {
+					exists = primary_title
+					primary_title.tier >= tier_kingdom
+					any_sub_realm_county = {
+						culture = {
+							cultural_acceptance = { target = scope:councillor_liege.culture value < 52 }
+						}
+					}
+					NOT = {
+						has_focus = stewardship_domain_focus
+					}
+				}
+				add_character_flag = {
+					flag = no_ai_increase_development
+					years = 30
+				}
+			}
+			else = {
+				add_character_flag = {
+					flag = no_ai_increase_development
+					years = 10
+				}
+			}
 			add_character_flag = {
-				flag = no_ai_increase_development
+				flag = ai_development_max_years
 				years = 10
 			}
 		}
 	}
 
-	on_start_task = {
-		liege = {
-			add_character_flag = {
-				flag = no_steward_side_effects_first_month
-				days = 30
-			}
-		}
-	}
+	monthly_on_action = task_develop_county_side_effects
 
 	on_monthly_county = {
 		scope:councillor_liege = {
-			if = {
-				limit = {
-					has_character_flag = no_steward_side_effects_first_month
-				}
-				remove_character_flag = no_steward_side_effects_first_month
-				add_character_flag = {
-					flag = ai_development_max_years
-					years = 1
-				}
-			}
-			else = {
-				trigger_event = {
-					on_action = task_develop_county_side_effects
-					days = { 1 30 }
-				}
-			}
-
 			if = {
 				limit = {
 					NOT = {
 						has_character_flag = ai_development_max_years
 					}
 				}
-				add_character_flag = {
-					flag = no_ai_increase_development
-					years = 10
+				if = { # Try to make relevant AI's focus on Acceptance
+					limit = {
+						exists = primary_title
+						primary_title.tier >= tier_kingdom
+						any_sub_realm_county = {
+							culture = {
+								cultural_acceptance = { target = scope:councillor_liege.culture value < 52 }
+							}
+						}
+						NOT = {
+							has_focus = stewardship_domain_focus
+						}
+					}
+					add_character_flag = {
+						flag = no_ai_increase_development
+						years = 30
+					}
+				}
+				else = {
+					add_character_flag = {
+						flag = no_ai_increase_development
+						years = 10
+					}
 				}
 			}
 		}
