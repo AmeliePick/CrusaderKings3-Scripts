@@ -3728,9 +3728,9 @@ temporal_condemnation_interaction = {
 			}
 			AND = {
 				scope:recipient.faith = scope:actor.faith
-				scope:recipient = {
-					any_learning_councillor = { this = scope:actor }
-				}
+				#scope:recipient = {
+					#any_learning_councillor = { this = scope:actor }
+				#}
 			}
 		}
 		NOT = { scope:actor = scope:recipient }
@@ -3775,13 +3775,35 @@ temporal_condemnation_interaction = {
 			object = scope:recipient
 			scope:recipient = {
 				trigger_if = {
-					limit = { scope:recipient.faith.religious_head = scope:actor }
+					OR =
+					{
+						scope:recipient.faith.religious_head = scope:actor
+						scope:recipient.faith = scope:actor.faith
+					}
 
-					num_sinful_traits = { value > 0 faith = scope:recipient.faith }
+					AND = {
+						OR = {
+							has_trait = adulterer
+							has_trait = fornicator
+						}
+						OR = {
+							AND = {
+								is_male = yes
+								NOT = {
+									scope:recipient.faith = { has_doctrine_parameter = adultery_male_accepted }
+								}
+							}
+							AND = {
+								is_female = yes
+								NOT = {
+									scope:recipient.faith = { has_doctrine_parameter = adultery_female_accepted }
+								}
+							}
+						}
+					}
 				}
 				trigger_else = {
-					#scope:faith.trait_is_sin = scope:faith.lustful
-					num_sinful_traits = { value > 0 faith = scope:actor.faith }
+					num_sinful_traits = { value > 0 faith = scope:recipient.faith }
 				}
 			}
 		}
@@ -3830,17 +3852,34 @@ temporal_condemnation_interaction = {
 				modifier = temporal_condemnation_opinion
 				years = 10
 			}
-			custom_tooltip = temporal_condemnation_revoke_reason
-			hidden_effect = {
-				send_interface_toast = {
-					title = temporal_condemnation_interaction.tt
-					left_icon = scope:recipient
-					show_as_tooltip = { custom_tooltip = temporal_condemnation_got_revoke_reason }
+
+			if = {
+				limit = {
+					AND = {
+						scope:recipient = {
+							is_landed = yes
+						}
+						OR = {
+							scope:recipient.faith.religious_head = scope:actor
+							scope:recipient.is_vassal_of = scope:actor
+						}
+					}
+				}
+				custom_tooltip = temporal_condemnation_revoke_reason
+				hidden_effect = {
+					send_interface_toast = {
+						title = temporal_condemnation_interaction.tt
+						left_icon = scope:recipient
+						show_as_tooltip = { custom_tooltip = temporal_condemnation_got_revoke_reason }
+					}
 				}
 			}
 			stress_impact = {
 				cynical = minor_stress_impact_gain
 			}
+
+
+
 		}
 		scope:recipient = {
 			add_character_modifier = {
