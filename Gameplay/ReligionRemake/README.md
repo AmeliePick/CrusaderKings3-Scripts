@@ -1,7 +1,9 @@
-This changes unlocks and remakes some interactions. It usefull if a player has
-a religious head title.
+***In developing***
 
-Changes:
+This changes unlocks and remakes some interactions. It useful if a player has
+a religious head title and more and more. This list of feature will be updated while developing.
+
+# Changes:
 ## Interactions
 If you are a religious head of NPC's faith or you are a chaplain of the NPC, you can:
 + Excommunicate/lift the NPC.

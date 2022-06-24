@@ -3781,23 +3781,42 @@ temporal_condemnation_interaction = {
 						scope:recipient.faith = scope:actor.faith
 					}
 
-					AND = {
-						OR = {
-							has_trait = adulterer
-							has_trait = fornicator
-						}
-						OR = {
-							AND = {
-								is_male = yes
-								NOT = {
-									scope:recipient.faith = { has_doctrine_parameter = adultery_male_accepted }
+					OR = {
+						# adulterer and adulterer checking
+						AND = {
+							OR = {
+								has_trait = adulterer
+								has_trait = fornicator
+							}
+							OR = {
+								AND = {
+									is_male = yes
+									NOT = {
+										scope:recipient.faith = { has_doctrine_parameter = adultery_male_accepted }
+									}
+								}
+								AND = {
+									is_female = yes
+									NOT = {
+										scope:recipient.faith = { has_doctrine_parameter = adultery_female_accepted }
+									}
 								}
 							}
-							AND = {
-								is_female = yes
-								NOT = {
-									scope:recipient.faith = { has_doctrine_parameter = adultery_female_accepted }
-								}
+						}
+
+						# deviancy check
+						AND = {
+							has_trait = deviant
+							NOT = {
+								scope:recipient.faith = { has_doctrine_parameter = deviancy_accepted }
+							}
+						}
+
+						# Sodomite check
+						AND = {
+							has_trait = sodomite
+							NOT = {
+								scope:recipient.faith = { has_doctrine_parameter = homosexuality_accepted }
 							}
 						}
 					}
