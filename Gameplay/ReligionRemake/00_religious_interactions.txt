@@ -1696,13 +1696,13 @@ excommunicate_interaction = {
 				has_trait = excommunicated
 			}
 		}
-		num_sinful_traits = { value > 0 faith = scope:recipient.faith }
 		NOT = { #Don't do this to yourself
 			scope:recipient = scope:actor
 		}
 	}
 
 	is_valid_showing_failures_only = {
+
 		NOR = {
 			scope:recipient = {
 				has_character_modifier = excommunication_recently_lifted
@@ -1714,8 +1714,10 @@ excommunicate_interaction = {
 				}
 			}
 		}
+
 		scope:recipient = {
 			age >= 12
+			is_character_has_sins_triger = yes
 		}
 		scope:actor = {
 			custom_description = {
@@ -2865,16 +2867,23 @@ take_vows_interaction = {
 
 			AND = {
 				scope:recipient.faith = scope:actor.faith
-				scope:recipient = {
-					any_learning_councillor = { this = scope:actor }
+
+				OR = {
+					scope:recipient = {
+						is_courtier_of  = scope:actor
+					}
+
+					scope:recipient = {
+						is_vassal_or_below_of = scope:actor
+					}
 				}
+
 			}
 		}
 
 		scope:recipient = {
-			#is_courtier_of = scope:actor
 			NOR = {
-				#has_trait = devoted
+				has_trait = devoted
 				has_trait = order_member
 			}
 		}
@@ -3790,106 +3799,7 @@ temporal_condemnation_interaction = {
 						scope:recipient.faith = scope:actor.faith
 					}
 
-					OR = {
-						# adulterer and adulterer checking
-						AND = {
-							OR = {
-								has_trait = adulterer
-								has_trait = fornicator
-								has_trait = rakish
-							}
-							OR = {
-								AND = {
-									is_male = yes
-									NOT = {
-										scope:recipient.faith = { has_doctrine_parameter = adultery_male_accepted }
-									}
-								}
-								AND = {
-									is_female = yes
-									NOT = {
-										scope:recipient.faith = { has_doctrine_parameter = adultery_female_accepted }
-									}
-								}
-							}
-						}
-
-						# deviancy check
-						AND = {
-							has_trait = deviant
-							NOT = {
-								scope:recipient.faith = { has_doctrine_parameter = deviancy_accepted }
-							}
-						}
-
-						# sodomite check
-						AND = {
-							has_trait = sodomite
-							NOT = {
-								scope:recipient.faith = { has_doctrine_parameter = homosexuality_accepted }
-							}
-						}
-
-						# kinslayer check
-						# kinslayer_1 - This character has committed the sin of murdering a dynasty member.
-						# kinslayer_2 - This character has slain a member of their extended family.
-						# kinslayer_3 - This character is known for having slain close kin.
-						OR = {
-							AND = {
-								has_trait = kinslayer_3
-								OR =
-								{
-									scope:recipient.faith = { has_doctrine_parameter = kinslaying_close_kin_crime }
-									scope:recipient.faith = { has_doctrine_parameter = kinslaying_shunned }
-								}
-							}
-							AND = {
-								OR = {
-									has_trait = kinslayer_3
-									has_trait = kinslayer_2
-								}
-								scope:recipient.faith = { has_doctrine_parameter = kinslaying_extended_family_crime }
-								scope:recipient.faith = { has_doctrine_parameter = kinslaying_shunned }
-							}
-							AND = {
-								OR = {
-									has_trait = kinslayer_3
-									has_trait = kinslayer_2
-									has_trait = kinslayer_1
-								}
-								scope:recipient.faith = { has_doctrine_parameter = kinslaying_any_dynasty_member_crime }
-								scope:recipient.faith = { has_doctrine_parameter = kinslaying_shunned }
-							}
-						}
-
-						# incestuous check
-						AND = {
-							has_trait = incestuous
-							NOT = {
-								scope:recipient.faith = { has_doctrine_parameter = allows_unrestricted_marriage }
-							}
-
-							# TODO: There are trigger to check is a relation between two characters is incest but it still needs to be tested.
-							# If incestuous trait is truly added to a character after checking by doctrine rules, then
-							# if a doctrine allow marriage only with cousin and character is cheating with any close family member then the trait would be added to the character.
-						}
-
-						# witch check
-						AND = {
-							has_trait = witch
-							NOT = {
-								scope:recipient.faith = { has_doctrine_parameter = witchcraft_accepted }
-							}
-						}
-
-						# cannibalism check
-						AND = {
-							has_trait = cannibal
-							NOT = {
-								scope:recipient.faith = { has_doctrine_parameter = cannibalism_legal }
-							}
-						}
-					}
+					is_character_has_sins_triger = yes
 				}
 			}
 		}
