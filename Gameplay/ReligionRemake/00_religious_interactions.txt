@@ -283,17 +283,26 @@ demand_conversion_interaction = {
 
 	is_shown = {
 		NOT = { scope:recipient = scope:actor }
+
 		scope:actor = {
-			is_house_head = yes
 			NOT = { faith = scope:recipient.faith }
-			house = scope:recipient.house
+			OR = {
+				AND = {
+					is_house_head = yes
+					house = scope:recipient.house
+				}
+
+				is_spouse_of = scope:recipient
+			}
 		}
 		NOT = {
 			scope:recipient = { # Use the vassal-liege interaction instead.
-				is_ruler = yes
+				is_ruler = no
 				target_is_liege_or_above = scope:actor
 			}
 		}
+
+
 		scope:recipient = { # To avoid you converting someone's entire family, and then asking them. Restricting it to landed rulers at least gives them a chance to create their own cadet house.
 			is_ruler = yes
 		}
@@ -1317,7 +1326,7 @@ convert_at_war_interaction = {
 
 ####################
 # Communion tenets #
-# by Sean Hughes	#
+# by Sean Hughes   #
 ####################
 
 seek_indulgences_interaction = {
@@ -1687,7 +1696,7 @@ excommunicate_interaction = {
 				has_trait = excommunicated
 			}
 		}
-
+		num_sinful_traits = { value > 0 faith = scope:recipient.faith }
 		NOT = { #Don't do this to yourself
 			scope:recipient = scope:actor
 		}
@@ -3787,6 +3796,7 @@ temporal_condemnation_interaction = {
 							OR = {
 								has_trait = adulterer
 								has_trait = fornicator
+								has_trait = rakish
 							}
 							OR = {
 								AND = {
@@ -3812,17 +3822,74 @@ temporal_condemnation_interaction = {
 							}
 						}
 
-						# Sodomite check
+						# sodomite check
 						AND = {
 							has_trait = sodomite
 							NOT = {
 								scope:recipient.faith = { has_doctrine_parameter = homosexuality_accepted }
 							}
 						}
+
+						# kinslayer check
+						# kinslayer_1 - This character has committed the sin of murdering a dynasty member.
+						# kinslayer_2 - This character has slain a member of their extended family.
+						# kinslayer_3 - This character is known for having slain close kin.
+						OR = {
+							AND = {
+								has_trait = kinslayer_3
+								OR =
+								{
+									scope:recipient.faith = { has_doctrine_parameter = kinslaying_close_kin_crime }
+									scope:recipient.faith = { has_doctrine_parameter = kinslaying_shunned }
+								}
+							}
+							AND = {
+								OR = {
+									has_trait = kinslayer_3
+									has_trait = kinslayer_2
+								}
+								scope:recipient.faith = { has_doctrine_parameter = kinslaying_extended_family_crime }
+								scope:recipient.faith = { has_doctrine_parameter = kinslaying_shunned }
+							}
+							AND = {
+								OR = {
+									has_trait = kinslayer_3
+									has_trait = kinslayer_2
+									has_trait = kinslayer_1
+								}
+								scope:recipient.faith = { has_doctrine_parameter = kinslaying_any_dynasty_member_crime }
+								scope:recipient.faith = { has_doctrine_parameter = kinslaying_shunned }
+							}
+						}
+
+						# incestuous check
+						AND = {
+							has_trait = incestuous
+							NOT = {
+								scope:recipient.faith = { has_doctrine_parameter = allows_unrestricted_marriage }
+							}
+
+							# TODO: There are trigger to check is a relation between two characters is incest but it still needs to be tested.
+							# If incestuous trait is truly added to a character after checking by doctrine rules, then
+							# if a doctrine allow marriage only with cousin and character is cheating with any close family member then the trait would be added to the character.
+						}
+
+						# witch check
+						AND = {
+							has_trait = witch
+							NOT = {
+								scope:recipient.faith = { has_doctrine_parameter = witchcraft_accepted }
+							}
+						}
+
+						# cannibalism check
+						AND = {
+							has_trait = cannibal
+							NOT = {
+								scope:recipient.faith = { has_doctrine_parameter = cannibalism_legal }
+							}
+						}
 					}
-				}
-				trigger_else = {
-					num_sinful_traits = { value > 0 faith = scope:recipient.faith }
 				}
 			}
 		}
