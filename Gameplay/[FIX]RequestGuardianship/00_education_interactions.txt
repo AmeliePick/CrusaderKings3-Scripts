@@ -1,0 +1,928 @@
+#Request guardianship
+offer_guardianship_interaction = {
+	category = interaction_category_friendly
+
+	send_name = SEND_PROPOSAL
+
+	desc = offer_guardianship_interaction_desc
+
+	redirect = {
+		if = {
+			limit = {
+				scope:actor = { is_ai = no }
+			}
+			scope:recipient = {
+				if = {
+					limit = {
+						exists = employer
+						NOT = { employer = scope:recipient }
+					}
+					if = {
+						limit = {
+							is_adult = no
+							#num_of_relation_guardian = 0
+						}
+						save_scope_as = secondary_recipient
+					}
+					employer = {
+						save_scope_as = recipient
+					}
+				}
+				else_if = {
+					limit = {
+						is_ruler = yes
+						is_adult = no
+					}
+					save_scope_as = recipient
+					save_scope_as = secondary_recipient
+				}
+			}
+		}
+	}
+
+	populate_actor_list = {
+		scope:actor = {
+			if = {
+				limit = {
+					is_adult = yes
+					num_of_relation_ward < 2
+				}
+				add_to_list = characters
+			}
+			every_courtier = {
+				limit = {
+					is_adult = yes
+					num_of_relation_ward < 2
+					
+					NOR = {
+						is_theocratic_lessee = yes
+						is_consort_of = scope:actor
+					}
+				}
+				add_to_list = characters
+			}
+		}
+	}
+
+	populate_recipient_list = {
+		scope:recipient = {
+			if = {
+				limit = {
+					is_adult = no
+					#num_of_relation_guardian = 0
+				}
+			}
+			add_to_list = characters
+			every_courtier = {
+				limit = {
+					is_adult = no
+					#num_of_relation_guardian = 0
+					trigger_if = {
+						limit = {
+							scope:actor = { is_ai = yes }
+						}
+						is_close_family_of = scope:recipient
+					}
+				}
+				add_to_list = characters
+			}
+		}
+	}
+
+	greeting = positive
+	notification_text = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					# I assign, myself, to educate not you, but your... 
+					scope:actor = scope:secondary_actor
+					NOT = { scope:recipient = scope:secondary_recipient }
+				}
+				desc = EDUCATE_RECIPIENT_CHILD_PERSONALLY_REQUEST
+			}
+			triggered_desc = {
+				trigger = {
+					# I assign, myself, to educate you, yourself!
+					scope:actor = scope:secondary_actor
+					scope:recipient = scope:secondary_recipient
+				}
+				desc = EDUCATE_RECIPIENT_PERSONALLY_REQUEST
+			}
+			triggered_desc = {
+				trigger = {
+				# I assign, not myself, to educate not you, but your... 
+					NOT = { scope:recipient = scope:secondary_recipient }
+					NOT = { scope:actor = scope:secondary_actor }
+				}
+				desc = EDUCATE_RECIPIENT_CHILD_REQUEST
+			}
+			triggered_desc = {
+				trigger = {
+				# I assign, not myself, to educate you, yourself
+					scope:recipient = scope:secondary_recipient
+					NOT = { scope:actor = scope:secondary_actor }
+				}
+				desc = EDUCATE_RECIPIENT_REQUEST 
+			}
+		}
+	}
+	
+	prompt = {
+		first_valid = {	
+			triggered_desc = {
+				trigger = {
+					NOT = { exists = scope:secondary_actor }
+				}
+				desc = EDUCATE_SELECT_YOUR_GUARDIAN
+			}
+			triggered_desc = {
+				trigger = {
+					NOT = { exists = scope:secondary_recipient }
+				}
+				desc = EDUCATE_SELECT_THEIR_WARD
+			}
+			desc = EDUCATE_SELECT_YOUR_WARD_OR_GUARDIAN
+		}
+	}
+
+	is_shown = {
+		scope:recipient = {
+			NOT = { this = scope:actor }
+			is_landed = yes
+		}
+		trigger_if = {
+			limit = {
+				exists = scope:secondary_recipient
+			}
+			scope:secondary_recipient = { is_adult = no }
+		}
+	}
+	
+
+	is_valid_showing_failures_only = {
+		custom_description = {
+			text = character_to_educate_exists
+			object = scope:recipient
+			scope:recipient = {
+				OR = {
+					any_courtier = {
+						is_adult = no
+						#num_of_relation_guardian = 0
+					}
+					AND = {
+						is_adult = no
+						#num_of_relation_guardian = 0
+					}
+				}
+			}
+		}
+		custom_description = {
+			text = character_to_guard_exists
+			subject = scope:recipient
+			scope:recipient = {
+				OR = {
+					any_courtier = {
+						is_adult = yes
+						num_of_relation_ward < 2
+					}
+					AND = {
+						is_adult = yes
+						num_of_relation_ward < 2
+					}
+				}
+			}
+		}
+		scope:recipient = {
+			is_imprisoned = no
+			is_diplomatically_available = yes
+		}
+		trigger_if = {
+			limit = {
+				exists = scope:secondary_recipient
+			}
+			scope:secondary_recipient = {
+				is_imprisoned = no
+				is_diplomatically_available = yes
+			}
+		}
+		NOT = {
+			scope:actor = {
+				is_at_war_with = scope:recipient
+			}
+		}
+	}
+	
+	
+	on_accept = {
+		scope:secondary_actor = {
+			save_scope_as = guardian
+			scope:secondary_recipient = { save_scope_as = ward }
+			scope:actor = { save_scope_as = ward_liege }
+			scope:recipient = { save_scope_as = guardian_liege }
+		}
+
+		if = { #To block against too many wards
+			limit = {
+				scope:guardian = { num_of_relation_ward < 2	}
+			}
+			offer_guardianship_interaction = yes
+		
+			save_scope_value_as = { #To give right tooltip in char_interaction.0080
+				name = offer_guardianship_interaction
+				value = yes
+			}
+
+			scope:actor = {
+				if = {
+					limit = { NOT = { this = scope:recipient } }
+					trigger_event = char_interaction.0080
+				}
+			}
+		}
+		else = { #Notifications about the relationship being blocked because actor tried to set it with too many
+			scope:recipient = {
+				trigger_event = char_interaction.0078
+			}
+			scope:actor = {
+				trigger_event = char_interaction.0079
+			}
+		}
+	}
+
+	on_decline = {
+		scope:actor = {
+			trigger_event = char_interaction.0081
+			add_opinion = {
+				modifier = declined_guardianship_opinion
+				target = scope:recipient
+				opinion = -15
+			}
+		}
+	}
+	
+	auto_accept = {
+		custom_description = {
+			text = "spending_hook"
+			subject = scope:actor
+			object = scope:recipient
+			scope:education_hook = yes
+			scope:actor = { has_strong_hook = scope:recipient }
+		}
+	}
+	
+	ai_accept = {
+		base = -50
+
+		#Weak hook: extra points
+		modifier = {
+			scope:education_hook = yes
+			add = 200
+			scope:actor = { NOT = { has_strong_hook = scope:recipient } }
+			desc = SCHEME_WEAK_HOOK_USED
+		}
+		
+		modifier = { # Respect the liege
+			add = 100
+			scope:recipient = { target_is_liege_or_above = scope:actor }
+			desc = EDUCATE_CHILD_ACTOR_IS_MY_LIEGE
+		}
+
+		#If the child is the educator's child they should be more likely to accept
+		modifier = {
+			add = 100
+			scope:secondary_recipient = {
+				is_adult = no
+				is_child_of = scope:secondary_actor
+			}
+			desc = AI_GUARDIANS_OWN_CHILD
+		}
+		
+		modifier = {
+			add = -100
+			scope:secondary_actor.court_owner = {
+				NOR = {
+					this = scope:recipient.court_owner
+					this = scope:secondary_recipient.court_owner
+				}
+			}
+			NOT = { scope:secondary_recipient = { is_child_of = scope:recipient } }
+			NOT = { scope:recipient = { target_is_liege_or_above = scope:actor } }
+			desc = AI_FOREIGN_COURT
+		}
+		
+		modifier = {
+			add = -200
+			scope:secondary_actor.court_owner = {
+				NOR = {
+					this = scope:recipient.court_owner
+					this = scope:secondary_recipient.court_owner
+				}
+			}
+			scope:secondary_recipient = { is_child_of = scope:recipient }
+			NOR = {
+				scope:recipient = { target_is_liege_or_above = scope:actor }
+				scope:recipient = { target_is_vassal_or_below = scope:actor}
+			}
+			desc = AI_CHILD_TO_FOREIGN_COURT
+		}
+
+		modifier = {
+			add = -50
+			scope:secondary_actor.court_owner = {
+				NOR = {
+					this = scope:recipient.court_owner
+					this = scope:secondary_recipient.court_owner
+				}
+			}
+			scope:secondary_recipient = { is_child_of = scope:recipient }
+			scope:recipient = { target_is_vassal_or_below = scope:actor}
+			desc = AI_CHILD_TO_VASSAL_COURT
+		}
+
+		modifier = {
+			add = 25
+			scope:secondary_recipient = {
+				is_close_or_extended_family_of = scope:secondary_actor
+			}
+
+			desc = AI_CHILD_EDUCATED_BY_FAMILY
+		}
+
+		modifier = {
+			add = -100
+			scope:convert_culture = yes
+			scope:secondary_recipient.culture = scope:recipient.culture
+			desc = AI_CONVERT_CULTURE
+		}
+
+		modifier = {
+			add = -100
+			scope:convert_faith = yes
+			scope:secondary_recipient.faith = scope:recipient.faith
+			desc = AI_CONVERT_FAITH
+		}
+
+		modifier = {
+			add = 50
+			scope:recipient = { has_relation_friend = scope:actor }
+			desc = AI_YOUR_FRIEND
+		}
+
+		modifier = {
+			add = -50
+			scope:recipient = { has_relation_rival = scope:actor }
+			desc = AI_YOUR_RIVAL
+		}
+
+		# If the guardian is the child's secret father, the mother is more likely to send them
+		modifier = {
+			add = 100
+			exists = scope:secondary_recipient.mother
+			scope:recipient = scope:secondary_recipient.mother
+			OR = {
+				scope:actor = {
+					any_known_secret = {
+						OR = {
+							secret_type = secret_unmarried_illegitimate_child
+							secret_type = secret_disputed_heritage
+						}
+						exists = secret_target
+						secret_target = scope:secondary_recipient
+					}
+				}
+				scope:secondary_recipient = { has_trait = disputed_heritage }
+				AND = {
+					scope:secondary_recipient = { has_trait = bastard }
+					NOT = { exists = scope:secondary_recipient.father }
+				}
+			}
+			exists = scope:secondary_recipient.real_father
+			scope:secondary_recipient.real_father = scope:secondary_actor
+			desc = AI_YOU_ARE_THE_FATHER
+		}
+
+		#Their opinion of you matters!
+		opinion_modifier = {
+			opinion_target = scope:actor
+			who = scope:recipient
+			multiplier = 1
+			desc = AI_OPINION_REASON
+		}
+
+		#Make less likely that they accept you as educator if they are of another culture
+		modifier = {
+			add = -5
+			trigger = {
+				scope:actor = {
+					this = scope:secondary_actor
+					culture = { has_same_culture_heritage = scope:recipient.culture }
+					NOT = { has_same_culture_as = scope:recipient }
+				}
+			}
+			desc = AI_NOT_CULTURE
+		}
+		
+		modifier = {
+			add = -10
+			trigger = {
+				scope:actor = {
+					this = scope:secondary_actor
+					NOT = { culture = { has_same_culture_heritage = scope:recipient.culture } }
+				}
+			}
+			desc = AI_NOT_CULTURE
+		}
+
+		#Less likely if they don't like other religion
+		modifier = {
+			add = {
+				value = -5
+				if = {
+					limit = {
+						scope:recipient.faith = {
+							faith_hostility_level = {
+								target = scope:actor.faith
+								value >= faith_hostile_level
+							}
+						}
+					}
+					subtract = 5
+				}
+				if = {
+					limit = {
+						scope:recipient.faith = {
+							faith_hostility_level = {
+								target = scope:actor.faith
+								value >= faith_evil_level
+							}
+						}
+					}
+					subtract = 10
+				}
+			}
+			trigger = {
+				NOT = { scope:recipient.faith = scope:actor.faith }
+			}
+			desc = AI_RELIGION
+		}
+
+		#The better the educator is at a skill, the more likely they are to accept
+		compare_modifier = {
+			trigger = {
+				scope:secondary_actor = {
+					diplomacy >= 11
+				}
+			}
+			target = scope:secondary_actor
+			value = diplomacy
+			step = 4
+			multiplier = 1
+			offset = 0
+			min = 0
+			desc = AI_GUARDIAN_SKILL_DIPLOMACY
+		}
+		compare_modifier = {
+			trigger = {
+				scope:secondary_actor = {
+					martial >= 11
+				}
+			}
+			target = scope:secondary_actor
+			value = martial
+			step = 4
+			multiplier = 1
+			offset = 0
+			min = 0
+			desc = AI_GUARDIAN_SKILL_MARTIAL
+		}
+		compare_modifier = {
+			trigger = {
+				scope:secondary_actor = {
+					stewardship >= 11
+				}
+			}
+			target = scope:secondary_actor
+			value = stewardship
+			step = 4
+			multiplier = 1
+			offset = 0
+			min = 0
+			desc = AI_GUARDIAN_SKILL_STEWARDSHIP
+		}
+		compare_modifier = {
+			trigger = {
+				scope:secondary_actor = {
+					intrigue >= 11
+				}
+			}
+			target = scope:secondary_actor
+			value = intrigue
+			step = 4
+			multiplier = 1
+			offset = 0
+			min = 0
+			desc = AI_GUARDIAN_SKILL_INTRIGUE
+		}
+		compare_modifier = {
+			trigger = {
+				scope:secondary_actor = {
+					learning >= 11
+				}
+			}
+			target = scope:secondary_actor
+			value = learning
+			step = 4
+			multiplier = 1
+			offset = 0
+			min = 0
+			desc = AI_GUARDIAN_SKILL_LEARNING
+		}
+
+		#More/Less likely based on difference in rank between actor and recipient
+		modifier = {
+			add = 30
+			scope:actor = {
+				tier_difference = {
+					target = scope:recipient
+					value = 1
+				}
+			}
+			desc = AI_RANK_DIFF
+		}
+		modifier = {
+			add = 40
+			scope:actor = {
+				tier_difference = {
+					target = scope:recipient
+					value = 2
+				}
+			}
+			desc = AI_RANK_DIFF
+		}
+		modifier = {
+			add = 50
+			scope:actor = {
+				tier_difference = {
+					target = scope:recipient
+					value = 3
+				}
+			}
+			desc = AI_RANK_DIFF
+		}
+		modifier = {
+			add = 60
+			scope:actor = {
+				tier_difference = {
+					target = scope:recipient
+					value = 4
+				}
+			}
+			desc = AI_RANK_DIFF
+		}
+		modifier = {
+			add = 70
+			scope:actor = {
+				tier_difference = {
+					target = scope:recipient
+					value = 5
+				}
+			}
+			desc = AI_RANK_DIFF
+		}
+		modifier = {
+			add = -30
+			scope:actor = {
+				tier_difference = {
+					target = scope:recipient
+					value = -1
+				}
+			}
+			desc = AI_RANK_DIFF
+		}
+		modifier = {
+			add = -40
+			scope:actor = {
+				tier_difference = {
+					target = scope:recipient
+					value = -2
+				}
+			}
+			desc = AI_RANK_DIFF
+		}
+		modifier = {
+			add = -50
+			scope:actor = {
+				tier_difference = {
+					target = scope:recipient
+					value = -3
+				}
+			}
+			desc = AI_RANK_DIFF
+		}
+		modifier = {
+			add = -60
+			scope:actor = {
+				tier_difference = {
+					target = scope:recipient
+					value = -4
+				}
+			}
+			desc = AI_RANK_DIFF
+		}
+		modifier = {
+			add = -70
+			scope:actor = {
+				tier_difference = {
+					target = scope:recipient
+					value = -5
+				}
+			}
+			desc = AI_RANK_DIFF
+		}
+
+		#More likely to accept if you have an alliance
+		modifier = {
+			add = 40
+			scope:actor = { is_allied_to = scope:recipient }
+			desc = AI_HAS_ALLIANCE
+		}
+		
+		modifier = {
+			add = 50
+			scope:recipient = {
+				target_is_liege_or_above = scope:actor
+				has_dread_level_towards = {
+					target = scope:actor
+					level = 1
+				}
+			}
+			desc = INTIMIDATED_REASON
+		}
+		modifier = {
+			add = 100
+			scope:recipient = {
+				target_is_liege_or_above = scope:actor
+				has_dread_level_towards = {
+					target = scope:actor
+					level = 2
+				}
+			}
+			desc = COWED_REASON
+		}
+		
+		modifier = {
+			add = 10
+			scope:recipient = {
+				NOT = { target_is_liege_or_above = scope:actor }
+				has_dread_level_towards = {
+					target = scope:actor
+					level = 1
+				}
+			}
+			desc = INTIMIDATED_REASON
+		}
+		modifier = {
+			add = 20
+			scope:recipient = {
+				NOT = { target_is_liege_or_above = scope:actor }
+				has_dread_level_towards = {
+					target = scope:actor
+					level = 2
+				}
+			}
+			desc = COWED_REASON
+		}
+		modifier = {
+			add = 20
+			scope:actor = {
+				has_royal_court = yes
+				target_is_vassal_or_below = scope:recipient
+				court_grandeur_current_level >= 7
+				court_grandeur_current_level < 9
+			}
+			desc = GRANDEUR_REASON
+		}
+		modifier = {
+			add = 40
+			scope:actor = {
+				has_royal_court = yes
+				target_is_vassal_or_below = scope:recipient
+				court_grandeur_current_level >= 9
+			}
+			desc = GRANDEUR_REASON
+		}
+	}
+	
+	send_option = {
+		is_shown = {
+			exists = scope:secondary_actor
+			exists = scope:secondary_recipient
+			NOT = { scope:secondary_actor.culture = scope:secondary_recipient.culture }
+		}
+		flag = convert_culture
+		localization = EDUCATE_CHILD_OPTION_CONVERT_CULTURE
+		current_description = {
+			first_valid = {
+				triggered_desc = {
+					trigger = {
+						exists = scope:secondary_actor
+						scope:secondary_actor = { is_adult = no }
+					}
+					desc = EDUCATE_CHILD_OPTION_CONVERT_CULTURE_TT_TO_RECIPIENT
+				}
+				triggered_desc = {
+					trigger = {
+						exists = scope:secondary_recipient
+						scope:secondary_recipient = { is_adult = no }
+					}
+					desc = EDUCATE_CHILD_OPTION_CONVERT_CULTURE_TT_TO_ACTOR
+				}
+			}
+		}
+	}
+	send_option = {
+		is_shown = {
+			exists = scope:secondary_actor
+			exists = scope:secondary_recipient
+			NOT = { scope:secondary_actor.faith = scope:secondary_recipient.faith }
+		}
+		flag = convert_faith
+		localization = EDUCATE_CHILD_OPTION_CONVERT_FAITH
+		current_description = {
+			first_valid = {
+				triggered_desc = {
+					trigger = {
+						exists = scope:secondary_actor
+						scope:secondary_actor = { is_adult = no }
+					}
+					desc = EDUCATE_CHILD_OPTION_CONVERT_FAITH_TT_TO_RECIPIENT
+				}
+				triggered_desc = {
+					trigger = {
+						exists = scope:secondary_recipient
+						scope:secondary_recipient = { is_adult = no }
+					}
+					desc = EDUCATE_CHILD_OPTION_CONVERT_FAITH_TT_TO_ACTOR
+				}
+			}
+		}
+	}
+	send_option = {
+		is_shown = {
+			scope:recipient = {
+				any_realm_province = {
+					has_university_building_trigger = yes
+				}
+			}
+		}
+		starts_enabled = { always = yes	}
+		flag = send_to_university
+		localization = EDUCATION_UNIVERSITY
+	}
+	send_option = {
+		is_valid = {
+			scope:actor = {
+				has_usable_hook = scope:recipient
+			}
+		}
+		flag = education_hook
+		localization = EDUCATION_HOOK
+	}
+	should_use_extra_icon = {
+		scope:actor = { has_usable_hook = scope:recipient }
+	}
+	extra_icon = "gfx/interface/icons/character_interactions/hook_icon.dds"
+
+	send_options_exclusive = no
+	
+	ai_targets = {
+		ai_recipients = vassals
+	}
+	
+	ai_frequency = 24
+	
+	ai_potential = {
+		is_imprisoned = no
+		NOT = { has_trait = incapable }
+	}
+	
+	ai_will_do = {
+		base = 0
+		
+		modifier = { # Liege's should want to culture/faith convert their vassal's children
+			add = 100
+			
+			scope:convert_culture = yes
+			scope:convert_faith = yes
+			
+			scope:secondary_actor = {
+				culture = scope:actor.culture
+				faith = scope:actor.faith
+			}
+			scope:secondary_recipient = {
+				OR = {
+					is_heir_of = scope:recipient
+					scope:secondary_recipient = scope:recipient
+				}
+			}
+		}
+		
+		modifier = { # Liege's should want to culture/faith convert their vassal's children
+			add = 95
+			
+			scope:convert_culture = yes
+			
+			scope:secondary_actor = {
+				culture = scope:actor.culture
+			}
+			scope:secondary_recipient = {
+				OR = {
+					is_heir_of = scope:recipient
+					scope:secondary_recipient = scope:recipient
+				}
+			}
+		}
+		
+		modifier = { # Liege's should want to culture/faith convert their vassal's children
+			add = 90
+			
+			scope:convert_faith = yes
+			
+			scope:secondary_actor = {
+				faith = scope:actor.faith
+			}
+			scope:secondary_recipient = {
+				OR = {
+					is_heir_of = scope:recipient
+					scope:secondary_recipient = scope:recipient
+				}
+			}
+		}
+		
+		modifier = { # Players shouldn't be spammed
+			add = -90
+			
+			scope:secondary_recipient = {
+				is_ai = no
+			}
+		}
+		
+		modifier = { # Don't ask to convert faith if that's already a thing
+			factor = 0
+			
+			scope:convert_faith = yes
+			NOT = { scope:convert_culture = yes }
+			
+			scope:secondary_recipient = {
+				any_relation = {
+					faith = scope:actor.faith
+					type = guardian
+					has_relation_flag = {
+						target = scope:secondary_recipient
+						relation = ward
+						flag = convert_faith
+					}
+				}
+			}
+		}
+		
+		modifier = { # Don't ask to convert culture if that's already a thing
+			factor = 0
+			
+			scope:convert_culture = yes
+			NOT = { scope:convert_faith = yes }
+			
+			scope:secondary_recipient = {
+				any_relation = {
+					culture = scope:actor.culture
+					type = guardian
+					has_relation_flag = {
+						target = scope:secondary_recipient
+						relation = ward
+						flag = convert_culture
+					}
+				}
+			}
+		}
+		
+		modifier = { # Don't ask to convert culture and faith if that's already a thing
+			factor = 0
+			
+			scope:convert_culture = yes
+			scope:convert_faith = yes
+			
+			scope:secondary_recipient = {
+				any_relation = {
+					culture = scope:actor.culture
+					faith = scope:actor.faith
+					type = guardian
+					has_relation_flag = {
+						target = scope:secondary_recipient
+						relation = ward
+						flag = convert_culture
+					}
+				}
+			}
+		}
+	}
+}
